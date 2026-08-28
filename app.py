@@ -26,23 +26,24 @@ st.markdown("""
 
 # Título principal de la aplicación en español
 st.title("🥗 Control de Calorías Diario")
-st.markdown("Personaliza tu rango diario de calorías, registra tus comidas y mantén el control total de tus objetivos.")
+st.markdown("Establece tu objetivo diario de calorías, registra tus comidas y mantén el control total.")
 
 # Inicializar el estado de sesión
 if 'meals' not in st.session_state:
     st.session_state.meals = []
 
 if 'target_calories' not in st.session_state:
-    st.session_state.target_calories = 2700
+    st.session_state.target_calories = 0
 
 # --- SECCIÓN LATERAL: CONFIGURACIÓN Y ENTRADA DE DATOS ---
 with st.sidebar:
     st.header("⚙️ Configuración")
     
+    # Objetivo Calórico que empieza en 0 para que el usuario lo escriba
     st.session_state.target_calories = st.number_input(
         "Calorías Diarias Objetivo (kcal)",
-        min_value=500,
-        max_value=6000,
+        min_value=0,
+        max_value=10000,
         value=st.session_state.target_calories,
         step=50
     )
@@ -64,7 +65,12 @@ with st.sidebar:
 # --- SECCIÓN PRINCIPAL: DASHBOARD ---
 consumed_calories = sum(item["Calorías"] for item in st.session_state.meals)
 remaining_calories = st.session_state.target_calories - consumed_calories
-progress_percentage = min(float(consumed_calories / st.session_state.target_calories), 1.0) if st.session_state.target_calories > 0 else 0.0
+
+# Evitar división por cero en la barra de progreso si el objetivo es 0
+if st.session_state.target_calories > 0:
+    progress_percentage = min(float(consumed_calories / st.session_state.target_calories), 1.0)
+else:
+    progress_percentage = 0.0
 
 col1, col2, col3 = st.columns(3)
 
@@ -75,16 +81,19 @@ with col2:
     st.metric(label="🔥 Calorías Consumidas", value=f"{consumed_calories} kcal")
 
 with col3:
-    st.metric(
-        label="⚡ Calorías Restantes", 
-        value=f"{remaining_calories} kcal",
-        delta=f"{-consumed_calories} kcal de consumo"
-    )
+    if st.session_state.target_calories > 0:
+        st.metric(
+            label="⚡ Calorías Restantes", 
+            value=f"{remaining_calories} kcal",
+            delta=f"{-consumed_calories} kcal de consumo"
+        )
+    else:
+        st.metric(label="⚡ Calorías Restantes", value="Define un objetivo")
 
 st.markdown("### 📊 Progreso del Día")
 st.progress(progress_percentage)
 
-if consumed_calories > st.session_state.target_calories:
+if st.session_state.target_calories > 0 and consumed_calories > st.session_state.target_calories:
     st.warning("⚠️ ¡Has superado tu meta calórica diaria recomendada!")
 
 st.markdown("---")
@@ -93,22 +102,19 @@ st.markdown("---")
 st.subheader("📋 Registro de Comidas de Hoy")
 
 if len(st.session_state.meals) == 0:
-    st.info("No hay registros de comida añadidos todavía. ¡Usa el panel lateral para empezar!")
+    st.info("No hay registros de comida añadidos todavía. ¡Configura tus calorías e introduce tus comidas en el panel lateral!")
 else:
-    # Mostramos la tabla normal para ver los datos
     df_meals = pd.DataFrame(st.session_state.meals)
     st.dataframe(df_meals, use_container_width=True)
     
     st.markdown("#### 🗑️ Eliminar una comida específica")
     
-    # Creamos un selector limpio con los nombres y calorías de lo que has añadido
     meal_options = [f"{i+1}. {item['Comida']} ({item['Calorías']} kcal)" for i, item in enumerate(st.session_state.meals)]
     selected_to_delete = st.selectbox("Selecciona cuál quieres borrar:", meal_options, label_visibility="collapsed")
     
     col_del1, col_del2 = st.columns([1, 4])
     with col_del1:
         if st.button("Eliminar seleccionada"):
-            # Extraemos el índice exacto del elemento seleccionado y lo borramos
             index_to_remove = meal_options.index(selected_to_delete)
             st.session_state.meals.pop(index_to_remove)
             st.rerun()
