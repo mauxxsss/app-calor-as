@@ -3,12 +3,12 @@ import pandas as pd
 
 # Configuración de la página de Streamlit
 st.set_page_config(
-    page_title="Control de calorias diarias",
+    page_title="Control de Calorías Diario",
     page_icon="🥗",
     layout="wide"
 )
 
-# Estilo CSS personalizado para darle un toque moderno y estético
+# Estilo CSS personalizado
 st.markdown("""
     <style>
     .main {
@@ -24,22 +24,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título principal de la aplicación
-st.title("🥗 Control de calorías diarias")
-st.markdown("Personaliza tu rango diario de calorías, registra tus comidas en tiempo real y mantén el control total de tus objetivos nutricionales.")
+# Título principal de la aplicación en español
+st.title("🥗 Control de Calorías Diario")
+st.markdown("Personaliza tu rango diario de calorías, registra tus comidas y mantén el control total de tus objetivos.")
 
-# Inicializar el estado de sesión (Session State) para persistir datos mientras interactúas
+# Inicializar el estado de sesión
 if 'meals' not in st.session_state:
     st.session_state.meals = []
 
 if 'target_calories' not in st.session_state:
-    st.session_state.target_calories = 2000
+    st.session_state.target_calories = 2700
 
 # --- SECCIÓN LATERAL: CONFIGURACIÓN Y ENTRADA DE DATOS ---
 with st.sidebar:
     st.header("⚙️ Configuración")
     
-    # Objetivo Calórico
     st.session_state.target_calories = st.number_input(
         "Calorías Diarias Objetivo (kcal)",
         min_value=500,
@@ -52,23 +51,21 @@ with st.sidebar:
     st.subheader("🍽️ Registrar Alimento")
     
     with st.form("meal_form", clear_on_submit=True):
-        meal_name = st.text_input("Descripción / Comida", placeholder="Ej. Desayuno, Ensalada...")
+        meal_name = st.text_input("Nombre de la comida", placeholder="Ej. Desayuno, Arroz con pollo...")
         meal_calories = st.number_input("Calorías (kcal)", min_value=0, max_value=3000, value=0, step=10)
         submitted = st.form_submit_button("Añadir al Registro")
         
         if submitted:
             if meal_name.strip() == "":
-                meal_name = "Comida sin nombre"
+                meal_name = "Comida"
             st.session_state.meals.append({"Comida": meal_name, "Calorías": meal_calories})
             st.success(f"¡Registrado: {meal_name}!")
 
 # --- SECCIÓN PRINCIPAL: DASHBOARD ---
-# Cálculo de estadísticas actuales
 consumed_calories = sum(item["Calorías"] for item in st.session_state.meals)
 remaining_calories = st.session_state.target_calories - consumed_calories
 progress_percentage = min(float(consumed_calories / st.session_state.target_calories), 1.0) if st.session_state.target_calories > 0 else 0.0
 
-# Fila de métricas principales
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -78,14 +75,12 @@ with col2:
     st.metric(label="🔥 Calorías Consumidas", value=f"{consumed_calories} kcal")
 
 with col3:
-    delta_color = "normal" if remaining_calories >= 0 else "inverse"
     st.metric(
         label="⚡ Calorías Restantes", 
         value=f"{remaining_calories} kcal",
         delta=f"{-consumed_calories} kcal de consumo"
     )
 
-# Barra de progreso visual
 st.markdown("### 📊 Progreso del Día")
 st.progress(progress_percentage)
 
@@ -94,29 +89,31 @@ if consumed_calories > st.session_state.target_calories:
 
 st.markdown("---")
 
-# Tabla de alimentos consumidos y botón para eliminar elementos
+# Tabla de alimentos consumidos con borrado individual limpio
 st.subheader("📋 Registro de Comidas de Hoy")
 
 if len(st.session_state.meals) == 0:
-    st.info("No hay registros de comida añadidos todavía. ¡Usa el panel lateral para empezar a registrar!")
+    st.info("No hay registros de comida añadidos todavía. ¡Usa el panel lateral para empezar!")
 else:
-    # Convertir a DataFrame para mostrarlo ordenado
+    # Mostramos la tabla normal para ver los datos
     df_meals = pd.DataFrame(st.session_state.meals)
+    st.dataframe(df_meals, use_container_width=True)
     
-    # Mostrar tabla interactiva con opción de borrar filas
-    col_table, col_actions = st.columns([3, 1])
+    st.markdown("#### 🗑️ Eliminar una comida específica")
     
-    with col_table:
-        st.dataframe(df_meals, use_container_width=True)
-        
-    with col_actions:
-        st.markdown("#### Acciones")
-        index_to_delete = st.number_input("Índice a eliminar", min_value=0, max_value=max(0, len(st.session_state.meals)-1), step=1, label_visibility="collapsed")
-        if st.button("🗑️ Eliminar Fila"):
-            if len(st.session_state.meals) > 0:
-                removed = st.session_state.meals.pop(index_to_delete)
-                st.rerun()
-
-    if st.button("🧹 Limpiar Todo el Registro"):
-        st.session_state.meals = []
-        st.rerun()
+    # Creamos un selector limpio con los nombres y calorías de lo que has añadido
+    meal_options = [f"{i+1}. {item['Comida']} ({item['Calorías']} kcal)" for i, item in enumerate(st.session_state.meals)]
+    selected_to_delete = st.selectbox("Selecciona cuál quieres borrar:", meal_options, label_visibility="collapsed")
+    
+    col_del1, col_del2 = st.columns([1, 4])
+    with col_del1:
+        if st.button("Eliminar seleccionada"):
+            # Extraemos el índice exacto del elemento seleccionado y lo borramos
+            index_to_remove = meal_options.index(selected_to_delete)
+            st.session_state.meals.pop(index_to_remove)
+            st.rerun()
+            
+    with col_del2:
+        if st.button("🧹 Borrar todo el registro"):
+            st.session_state.meals = []
+            st.rerun()
