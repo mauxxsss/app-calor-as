@@ -3,7 +3,7 @@ import pandas as pd
 
 # Configuración de la página de Streamlit
 st.set_page_config(
-    page_title="Interactive Calorie Tracker",
+    page_title="Control de calorias diarias",
     page_icon="🥗",
     layout="wide"
 )
@@ -25,7 +25,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Título principal de la aplicación
-st.title("🥗 Dynamic Calorie & Nutrition Tracker")
+st.title("🥗 Control de calorías diarias")
 st.markdown("Personaliza tu rango diario de calorías, registra tus comidas en tiempo real y mantén el control total de tus objetivos nutricionales.")
 
 # Inicializar el estado de sesión (Session State) para persistir datos mientras interactúas
