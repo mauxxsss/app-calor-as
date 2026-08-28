@@ -120,14 +120,3 @@ else:
     if st.button("🧹 Limpiar Todo el Registro"):
         st.session_state.meals = []
         st.rerun()
-```eof
-
-¡Tu aplicación interactiva en Streamlit ya está lista! 
-
-### Pasos sencillos para subirlo a GitHub y Streamlit Cloud:
-1. Crea un nuevo repositorio público en **GitHub** y sube este archivo con el nombre exacto de `app.py`.
-2. Crea un archivo adicional llamado `requirements.txt` en el mismo repositorio que contenga simplemente:
-   
-```text
-   streamlit
-   pandas
